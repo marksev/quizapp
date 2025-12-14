@@ -42,29 +42,29 @@ class QuizPage extends StatefulWidget {
 class _QuizPageState extends State<QuizPage> {
   final List<QuizQuestion> _questions = const [
     QuizQuestion(
-      country: 'France',
-      capitals: ['Madrid', 'Paris', 'Lisbon', 'Vienna'],
-      answerIndex: 1,
-    ),
-    QuizQuestion(
-      country: 'Japan',
-      capitals: ['Seoul', 'Beijing', 'Bangkok', 'Tokyo'],
-      answerIndex: 3,
-    ),
-    QuizQuestion(
       country: 'Canada',
       capitals: ['Ottawa', 'Toronto', 'Vancouver', 'Montreal'],
       answerIndex: 0,
     ),
     QuizQuestion(
-      country: 'Australia',
-      capitals: ['Canberra', 'Sydney', 'Melbourne', 'Perth'],
+      country: 'France',
+      capitals: ['Madrid', 'Paris', 'Lisbon', 'Vienna'],
+      answerIndex: 1,
+    ),
+    QuizQuestion(
+      country: 'Italy',
+      capitals: ['Rome', 'Milan', 'Naples', 'Florence'],
       answerIndex: 0,
     ),
     QuizQuestion(
-      country: 'Brazil',
-      capitals: ['Rio de Janeiro', 'São Paulo', 'Brasília', 'Recife'],
-      answerIndex: 2,
+      country: 'Spain',
+      capitals: ['Barcelona', 'Madrid', 'Seville', 'Valencia'],
+      answerIndex: 1,
+    ),
+    QuizQuestion(
+      country: 'United States',
+      capitals: ['New York City', 'Washington, D.C.', 'Los Angeles', 'Chicago'],
+      answerIndex: 1,
     ),
   ];
 
@@ -84,22 +84,15 @@ class _QuizPageState extends State<QuizPage> {
   }
 
   void _selectAnswer(int index) {
+    final bool lastQuestion = _currentQuestion == _questions.length - 1;
     setState(() {
       _selectedAnswers[_currentQuestion] = index;
-    });
-  }
-
-  void _nextStep() {
-    final bool lastQuestion = _currentQuestion == _questions.length - 1;
-    if (lastQuestion) {
-      setState(() {
+      if (lastQuestion) {
         _showResults = true;
-      });
-    } else {
-      setState(() {
+      } else {
         _currentQuestion++;
-      });
-    }
+      }
+    });
   }
 
   void _restartQuiz() {
@@ -188,30 +181,6 @@ class _QuizPageState extends State<QuizPage> {
             ),
           );
         }),
-        const Spacer(),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            TextButton(
-              onPressed: _currentQuestion > 0
-                  ? () {
-                      setState(() {
-                        _currentQuestion--;
-                      });
-                    }
-                  : null,
-              child: const Text('Previous'),
-            ),
-            FilledButton(
-              onPressed: _selectedAnswers[_currentQuestion] == null
-                  ? null
-                  : _nextStep,
-              child: Text(
-                _currentQuestion == _questions.length - 1 ? 'Finish' : 'Next',
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -231,7 +200,7 @@ class _QuizPageState extends State<QuizPage> {
             ),
             const SizedBox(height: 12),
             Text(
-              'You scored $_score / $totalQuestions',
+              'You got $_score out of $totalQuestions correct',
               style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
