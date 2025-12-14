@@ -19,7 +19,10 @@ jobs:
           channel: stable
 
       - name: Generate Android platform files
-        run: flutter create . --platforms=android
+        run: flutter create . --platforms=android --project-name quizapp --org com.example.quizapp --overwrite
+
+      - name: Verify Android directory
+        run: ls -la android
 
       - name: Install dependencies
         run: flutter pub get
