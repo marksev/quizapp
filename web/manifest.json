@@ -1,0 +1,10 @@
+{
+  "name": "Capitals Quiz",
+  "short_name": "Capitals Quiz",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFFFFF",
+  "theme_color": "#3F51B5",
+  "description": "Test your knowledge of world capitals in a quick quiz!"
+}
