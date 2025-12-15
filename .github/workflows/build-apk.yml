@@ -1,4 +1,4 @@
-name: Build Web Bundle
+name: Build Android APK
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-web:
+  build-android:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -22,12 +22,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build web bundle
-        run: flutter build web
+      - name: Build Android APK
+        run: flutter build apk --release
 
-      - name: Upload web artifact
+      - name: Upload Android artifact
         uses: actions/upload-artifact@v4
         with:
-          name: web-build
-          path: build/web
+          name: android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
