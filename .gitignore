@@ -1,13 +1,14 @@
-.DS_Store
+# Flutter/Dart/Pub related
 .dart_tool/
 .packages
-build/
 .pub-cache/
-.flutter-plugins
-.flutter-plugins-dependencies
-.melos_tool/
-pubspec.lock
-*.iml
-.idea/
+build/
+flutter_export_environment.sh
+
+# Visual Studio Code
 .vscode/
-web/icons/
+.idea/
+
+# Misc
+*.iml
+.DS_Store
