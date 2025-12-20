@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'data/questions.dart';
+import 'models/question.dart';
 
 void main() {
   runApp(const QuizApp());
@@ -10,7 +12,7 @@ class QuizApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'World Countries Quiz',
+      title: 'Countries & Capitals Quiz',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -21,19 +23,7 @@ class QuizApp extends StatelessWidget {
   }
 }
 
-class QuizQuestion {
-  const QuizQuestion({
-    required this.country,
-    required this.options,
-    required this.correctIndex,
-    this.fact,
-  });
-
-  final String country;
-  final List<String> options;
-  final int correctIndex;
-  final String? fact;
-}
+enum QuizStage { notStarted, inProgress, finished }
 
 class QuizHomePage extends StatefulWidget {
   const QuizHomePage({super.key});
@@ -43,78 +33,18 @@ class QuizHomePage extends StatefulWidget {
 }
 
 class _QuizHomePageState extends State<QuizHomePage> {
-  final List<QuizQuestion> _questions = const [
-    QuizQuestion(
-      country: 'Canada',
-      options: ['Ottawa', 'Toronto', 'Vancouver', 'Montreal'],
-      correctIndex: 0,
-      fact: 'Ottawa sits on the Ontario–Quebec border and is home to the Rideau Canal.',
-    ),
-    QuizQuestion(
-      country: 'Japan',
-      options: ['Kyoto', 'Tokyo', 'Osaka', 'Sapporo'],
-      correctIndex: 1,
-      fact: 'Tokyo is the world’s most populous metropolitan area.',
-    ),
-    QuizQuestion(
-      country: 'Australia',
-      options: ['Sydney', 'Melbourne', 'Canberra', 'Perth'],
-      correctIndex: 2,
-      fact: 'Canberra was selected as a compromise between rivals Sydney and Melbourne.',
-    ),
-    QuizQuestion(
-      country: 'Brazil',
-      options: ['São Paulo', 'Brasília', 'Rio de Janeiro', 'Salvador'],
-      correctIndex: 1,
-      fact: 'Brasília was inaugurated in 1960 and designed by architect Oscar Niemeyer.',
-    ),
-    QuizQuestion(
-      country: 'Kenya',
-      options: ['Mombasa', 'Nairobi', 'Kisumu', 'Nakuru'],
-      correctIndex: 1,
-      fact: 'Nairobi is nicknamed "The Green City in the Sun" for its parks and sunshine.',
-    ),
-    QuizQuestion(
-      country: 'Germany',
-      options: ['Hamburg', 'Berlin', 'Munich', 'Frankfurt'],
-      correctIndex: 1,
-      fact: 'Berlin has more bridges than Venice and is nine times larger.',
-    ),
-    QuizQuestion(
-      country: 'Argentina',
-      options: ['Córdoba', 'Buenos Aires', 'Rosario', 'Mendoza'],
-      correctIndex: 1,
-      fact: 'Buenos Aires is called the "Paris of South America" for its architecture.',
-    ),
-    QuizQuestion(
-      country: 'Egypt',
-      options: ['Giza', 'Alexandria', 'Cairo', 'Luxor'],
-      correctIndex: 2,
-      fact: 'Cairo’s metropolitan area is the largest in the Arab world.',
-    ),
-    QuizQuestion(
-      country: 'Norway',
-      options: ['Bergen', 'Trondheim', 'Oslo', 'Stavanger'],
-      correctIndex: 2,
-      fact: 'Oslo is surrounded by the Oslofjord and forested hills, making it great for hiking.',
-    ),
-    QuizQuestion(
-      country: 'Thailand',
-      options: ['Chiang Mai', 'Bangkok', 'Phuket', 'Pattaya'],
-      correctIndex: 1,
-      fact: 'Bangkok’s ceremonial name is over 160 characters long in Thai.',
-    ),
-  ];
-
+  final List<Question> _questions = questions;
+  QuizStage _stage = QuizStage.notStarted;
   int _currentIndex = 0;
   int _score = 0;
   int? _selectedIndex;
-  bool _showSummary = false;
 
-  QuizQuestion get _currentQuestion => _questions[_currentIndex];
+  Question get _currentQuestion => _questions[_currentIndex];
+
+  bool get _hasAnswered => _selectedIndex != null;
 
   void _selectOption(int index) {
-    if (_showSummary) {
+    if (_stage != QuizStage.inProgress || _hasAnswered) {
       return;
     }
 
@@ -124,12 +54,15 @@ class _QuizHomePageState extends State<QuizHomePage> {
   }
 
   void _nextQuestion() {
-    if (_selectedIndex == null) {
+    if (!_hasAnswered) {
       return;
     }
 
+    final bool isCorrect =
+        _currentQuestion.options[_selectedIndex!] == _currentQuestion.correctAnswer;
+
     setState(() {
-      if (_selectedIndex == _currentQuestion.correctIndex) {
+      if (isCorrect) {
         _score += 1;
       }
 
@@ -137,29 +70,42 @@ class _QuizHomePageState extends State<QuizHomePage> {
         _currentIndex += 1;
         _selectedIndex = null;
       } else {
-        _showSummary = true;
+        _stage = QuizStage.finished;
+        _selectedIndex = null;
       }
     });
   }
 
   void _restartQuiz() {
     setState(() {
+      _stage = QuizStage.notStarted;
       _currentIndex = 0;
       _score = 0;
       _selectedIndex = null;
-      _showSummary = false;
+    });
+  }
+
+  void _startQuiz() {
+    setState(() {
+      _stage = QuizStage.inProgress;
+      _currentIndex = 0;
+      _score = 0;
+      _selectedIndex = null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final progress = _showSummary
-        ? 1.0
-        : (_currentIndex + 1) / _questions.length.toDouble();
+    final progress = switch (_stage) {
+      QuizStage.notStarted => 0.0,
+      QuizStage.inProgress =>
+          (_currentIndex + 1) / _questions.length.toDouble(),
+      QuizStage.finished => 1.0,
+    };
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('World Countries Quiz'),
+        title: const Text('Countries & Capitals Quiz'),
         centerTitle: true,
       ),
       body: Container(
@@ -180,9 +126,11 @@ class _QuizHomePageState extends State<QuizHomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      _showSummary
-                          ? 'Completed'
-                          : 'Question ${_currentIndex + 1} of ${_questions.length}',
+                      _stage == QuizStage.notStarted
+                          ? 'Welcome'
+                          : _stage == QuizStage.finished
+                              ? 'Completed'
+                              : 'Question ${_currentIndex + 1} of ${_questions.length}',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     Chip(
@@ -203,13 +151,53 @@ class _QuizHomePageState extends State<QuizHomePage> {
                 ),
                 const SizedBox(height: 24),
                 Expanded(
-                  child: _showSummary ? _buildSummaryCard() : _buildQuestionCard(),
+                  child: switch (_stage) {
+                    QuizStage.notStarted => _buildStartCard(),
+                    QuizStage.finished => _buildSummaryCard(),
+                    QuizStage.inProgress => _buildQuestionCard(),
+                  },
                 ),
                 const SizedBox(height: 16),
                 _buildBottomBar(),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStartCard() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.flag, size: 64, color: Colors.deepPurple),
+            const SizedBox(height: 16),
+            Text(
+              'Countries & Capitals',
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Test your knowledge of world capitals. Each question has four options—choose wisely!',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: _startQuiz,
+              icon: const Icon(Icons.play_arrow),
+              label: const Text('Start Quiz'),
+            ),
+          ],
         ),
       ),
     );
@@ -252,18 +240,19 @@ class _QuizHomePageState extends State<QuizHomePage> {
             const SizedBox(height: 16),
             ...List.generate(_currentQuestion.options.length, (index) {
               final option = _currentQuestion.options[index];
-              final isSelected = _selectedIndex == index;
-              final isCorrect = _currentQuestion.correctIndex == index;
-              final answered = _selectedIndex != null;
+              final bool isSelected = _selectedIndex == index;
+              final bool isCorrectOption =
+                  option == _currentQuestion.correctAnswer;
+              final bool answered = _hasAnswered;
 
               Color? background;
               Color? foreground;
               if (answered && isSelected) {
-                background = isCorrect
-                    ? Colors.green.shade100
-                    : Colors.red.shade100;
-                foreground = isCorrect ? Colors.green.shade800 : Colors.red;
-              } else if (answered && isCorrect) {
+                background =
+                    isCorrectOption ? Colors.green.shade100 : Colors.red.shade100;
+                foreground =
+                    isCorrectOption ? Colors.green.shade800 : Colors.red.shade800;
+              } else if (answered && isCorrectOption) {
                 background = Colors.green.shade50;
                 foreground = Colors.green.shade800;
               }
@@ -282,11 +271,11 @@ class _QuizHomePageState extends State<QuizHomePage> {
                   child: Row(
                     children: [
                       Icon(
-                        isCorrect
+                        isCorrectOption
                             ? Icons.check_circle
                             : Icons.radio_button_unchecked,
                         color: answered
-                            ? (isCorrect ? Colors.green : Colors.red)
+                            ? (isCorrectOption ? Colors.green : Colors.red)
                             : Colors.grey,
                       ),
                       const SizedBox(width: 12),
@@ -301,12 +290,13 @@ class _QuizHomePageState extends State<QuizHomePage> {
                 ),
               );
             }),
-            if (_selectedIndex != null) ...[
+            if (_hasAnswered) ...[
               const SizedBox(height: 12),
               Row(
                 children: [
                   Icon(
-                    _selectedIndex == _currentQuestion.correctIndex
+                    _currentQuestion.options[_selectedIndex!] ==
+                            _currentQuestion.correctAnswer
                         ? Icons.emoji_events
                         : Icons.travel_explore,
                     color: Colors.deepPurple,
@@ -314,20 +304,14 @@ class _QuizHomePageState extends State<QuizHomePage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      _selectedIndex == _currentQuestion.correctIndex
+                      _currentQuestion.options[_selectedIndex!] ==
+                              _currentQuestion.correctAnswer
                           ? 'Great! That\'s correct.'
-                          : 'Not quite. The capital is ${_currentQuestion.options[_currentQuestion.correctIndex]}.',
+                          : 'Not quite. The capital is ${_currentQuestion.correctAnswer}.',
                     ),
                   ),
                 ],
               ),
-              if (_currentQuestion.fact != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  _currentQuestion.fact!,
-                  style: TextStyle(color: Colors.grey.shade700),
-                ),
-              ],
             ],
           ],
         ),
@@ -372,6 +356,18 @@ class _QuizHomePageState extends State<QuizHomePage> {
   }
 
   Widget _buildBottomBar() {
+    if (_stage == QuizStage.notStarted) {
+      return const SizedBox.shrink();
+    }
+
+    if (_stage == QuizStage.finished) {
+      return FilledButton.icon(
+        onPressed: _restartQuiz,
+        icon: const Icon(Icons.refresh),
+        label: const Text('Restart Quiz'),
+      );
+    }
+
     return Row(
       children: [
         Expanded(
@@ -384,10 +380,17 @@ class _QuizHomePageState extends State<QuizHomePage> {
         const SizedBox(width: 12),
         Expanded(
           child: FilledButton.icon(
-            onPressed:
-                _selectedIndex == null && !_showSummary ? null : _nextQuestion,
-            icon: Icon(_showSummary ? Icons.check : Icons.arrow_forward),
-            label: Text(_showSummary ? 'View score' : 'Next question'),
+            onPressed: _hasAnswered ? _nextQuestion : null,
+            icon: Icon(
+              _currentIndex == _questions.length - 1
+                  ? Icons.check
+                  : Icons.arrow_forward,
+            ),
+            label: Text(
+              _currentIndex == _questions.length - 1
+                  ? 'Finish Quiz'
+                  : 'Next Question',
+            ),
           ),
         ),
       ],

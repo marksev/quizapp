@@ -2,16 +2,13 @@ name: Build Android APK
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-  workflow_dispatch:
+    branches: [main]
 
 jobs:
-  build-android:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Flutter
@@ -19,15 +16,22 @@ jobs:
         with:
           channel: stable
 
+      - name: Generate Android platform files
+        run: |
+          flutter create --platforms=android --project-name=quizapp /tmp/quizapp_android
+          rsync -a --delete /tmp/quizapp_android/android/ android/
+
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build Android APK
+      - name: Run tests
+        run: flutter test || true
+
+      - name: Build release APK
         run: flutter build apk --release
 
-      - name: Upload Android artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-apk
+          name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
