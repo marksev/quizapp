@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'data/questions.dart';
 import 'models/question.dart';
@@ -33,7 +35,8 @@ class QuizHomePage extends StatefulWidget {
 }
 
 class _QuizHomePageState extends State<QuizHomePage> {
-  final List<Question> _questions = questions;
+  final Random _random = Random();
+  List<Question> _questions = [];
   QuizStage _stage = QuizStage.notStarted;
   int _currentIndex = 0;
   int _score = 0;
@@ -42,6 +45,21 @@ class _QuizHomePageState extends State<QuizHomePage> {
   Question get _currentQuestion => _questions[_currentIndex];
 
   bool get _hasAnswered => _selectedIndex != null;
+
+  List<Question> _generateShuffledQuestions() {
+    final shuffledQuestions = List<Question>.from(questions)
+      ..shuffle(_random);
+
+    return shuffledQuestions
+        .map(
+          (question) => Question(
+            country: question.country,
+            options: (List<String>.from(question.options)..shuffle(_random)),
+            correctAnswer: question.correctAnswer,
+          ),
+        )
+        .toList();
+  }
 
   void _selectOption(int index) {
     if (_stage != QuizStage.inProgress || _hasAnswered) {
@@ -82,11 +100,13 @@ class _QuizHomePageState extends State<QuizHomePage> {
       _currentIndex = 0;
       _score = 0;
       _selectedIndex = null;
+      _questions = [];
     });
   }
 
   void _startQuiz() {
     setState(() {
+      _questions = _generateShuffledQuestions();
       _stage = QuizStage.inProgress;
       _currentIndex = 0;
       _score = 0;
@@ -271,12 +291,20 @@ class _QuizHomePageState extends State<QuizHomePage> {
                   child: Row(
                     children: [
                       Icon(
-                        isCorrectOption
-                            ? Icons.check_circle
-                            : Icons.radio_button_unchecked,
-                        color: answered
-                            ? (isCorrectOption ? Colors.green : Colors.red)
-                            : Colors.grey,
+                        !answered
+                            ? Icons.radio_button_unchecked
+                            : isCorrectOption
+                                ? Icons.check_circle
+                                : isSelected
+                                    ? Icons.cancel
+                                    : Icons.radio_button_unchecked,
+                        color: !answered
+                            ? Colors.grey
+                            : isCorrectOption
+                                ? Colors.green
+                                : isSelected
+                                    ? Colors.red
+                                    : Colors.grey,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
