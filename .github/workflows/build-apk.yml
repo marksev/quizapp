@@ -16,6 +16,11 @@ jobs:
         with:
           channel: stable
 
+      - name: Generate Android platform files
+        run: |
+          flutter create --platforms=android --project-name=quizapp /tmp/quizapp_android
+          rsync -a --delete /tmp/quizapp_android/android/ android/
+
       - name: Install dependencies
         run: flutter pub get
 
